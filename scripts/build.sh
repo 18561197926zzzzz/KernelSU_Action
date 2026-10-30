@@ -132,6 +132,15 @@ build_kernel() {
 	fi
 
 	cd "$KERNEL_DIR"
+	# QCOM 内核的 vendor/*.config 是 fragment，必须先由 defconfig 生成基础 .config，
+	# 否则 kconfig 报 "The base file '.config' does not exist" 直接退出
+	case "${KERNEL_CONFIG}" in
+		*.config)
+			info "make ${args} defconfig (base for fragment ${KERNEL_CONFIG})"
+			make -j"$(nproc --all)" CC=clang $args defconfig \
+				|| die "base defconfig generation failed"
+			;;
+	esac
 	info "make ${args} ${KERNEL_CONFIG}"
 	# shellcheck disable=SC2086
 	make -j"$(nproc --all)" CC=clang $args "${KERNEL_CONFIG}" \
